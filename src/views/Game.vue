@@ -149,7 +149,7 @@ const handleInventorySell = (goodsId: number) => {
       goodsId,
       goods.name,
       goods.price,
-      0,
+      goods.owned,
       maxSell
     )
   }

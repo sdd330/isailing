@@ -46,6 +46,18 @@ pnpm dev
 pnpm build
 ```
 
+### 桌面端（Tauri 2）
+```bash
+# 允许构建脚本（首次/依赖变更后执行）
+pnpm approve-builds
+
+# 开发模式（桌面 + Vite dev server）
+pnpm tauri:dev
+
+# 打包桌面应用（macOS 产物在 src-tauri/target/release/bundle/macos）
+pnpm tauri:build
+```
+
 ### 代码检查
 ```bash
 pnpm lint

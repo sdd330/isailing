@@ -1,0 +1,36 @@
+{
+  "$schema": "https://raw.githubusercontent.com/tauri-apps/tauri/2.0/tooling/cli/schema.json",
+  "productName": "iSailing",
+  "version": "1.0.0",
+  "identifier": "com.isailing.app",
+  "build": {
+    "frontendDist": "../dist",
+    "devUrl": "http://localhost:5173",
+    "beforeDevCommand": "pnpm dev",
+    "beforeBuildCommand": "pnpm build"
+  },
+  "app": {
+    "security": {
+      "csp": null
+    },
+    "windows": [
+      {
+        "title": "iSailing",
+        "fullscreen": false,
+        "resizable": true,
+        "width": 1280,
+        "height": 800
+      }
+    ]
+  },
+  "bundle": {
+    "icon": ["icons/icon.icns", "icons/icon.ico", "icons/icon.png"],
+    "targets": ["dmg", "app", "appimage", "deb"],
+    "macOS": {
+      "minimumSystemVersion": "10.13",
+      "entitlements": null,
+      "exceptionDomain": ""
+    }
+  }
+}
+

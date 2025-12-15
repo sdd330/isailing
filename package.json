@@ -11,10 +11,15 @@
     "prepare": "husky",
     "commit": "cz",
     "release": "standard-version",
-    "typecheck": "vue-tsc --noEmit"
+    "typecheck": "vue-tsc --noEmit",
+    "tauri:dev": "tauri dev",
+    "tauri:build": "tauri build"
   },
   "dependencies": {
     "@element-plus/icons-vue": "^2.3.2",
+    "@tauri-apps/api": "^2.0.0",
+    "@tauri-apps/plugin-store": "^2.0.0",
+    "@tauri-apps/plugin-updater": "^2.0.0",
     "element-plus": "^2.12.0",
     "pinia": "^3.0.4",
     "vue": "^3.5.25",
@@ -25,6 +30,7 @@
     "@commitlint/cli": "^20.2.0",
     "@commitlint/config-conventional": "^20.2.0",
     "@rushstack/eslint-patch": "^1.15.0",
+    "@tauri-apps/cli": "^2.9.6",
     "@types/node": "^25.0.2",
     "@unocss/vite": "^66.5.10",
     "@vitejs/plugin-vue": "^6.0.3",
