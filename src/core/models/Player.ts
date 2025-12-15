@@ -23,6 +23,10 @@ export class Player {
     return this.state.health
   }
 
+  get stamina(): number {
+    return this.state.stamina
+  }
+
   get fame(): number {
     return this.state.fame
   }
@@ -36,7 +40,7 @@ export class Player {
   }
 
   get maxCapacity(): number {
-    return this.state.maxCapacity
+    return this.getEffectiveMaxCapacity()
   }
 
   get currentCity(): string {
@@ -45,10 +49,6 @@ export class Player {
 
   get currentLocation(): number {
     return this.state.currentLocation
-  }
-
-  get deliveryVisits(): number {
-    return this.state.deliveryVisits
   }
 
   addCash(amount: number): void {
@@ -83,6 +83,15 @@ export class Player {
     this.state.health = Math.max(0, this.state.health - points)
   }
 
+  addStamina(points: number): void {
+    const max = this.state.maxStamina || 100
+    this.state.stamina = Math.min(max, this.state.stamina + points)
+  }
+
+  subtractStamina(points: number): void {
+    this.state.stamina = Math.max(0, this.state.stamina - points)
+  }
+
   addFame(points: number): void {
     this.state.fame = Math.max(0, this.state.fame + points)
   }
@@ -96,7 +105,20 @@ export class Player {
   }
 
   increaseCapacity(amount: number): void {
-    this.state.maxCapacity += amount
+    // 基础容量（行李箱）保持不变，额外容量全局累积
+    const base = this.state.baseCapacity ?? this.state.maxCapacity
+    this.state.maxCapacity = (this.state.maxCapacity || base) + amount
+  }
+
+  /**
+   * 当前生效的最大容量：
+   * - 在当前城市已经通过中介租房 → 使用全局 maxCapacity
+   * - 否则 → 只能使用行李箱基础容量（baseCapacity）
+   */
+  getEffectiveMaxCapacity(): number {
+    const base = this.state.baseCapacity ?? this.state.maxCapacity
+    const hasRented = this.state.rentedCities?.includes(this.state.currentCity) || false
+    return hasRented ? (this.state.maxCapacity || base) : base
   }
 
   setCurrentCity(cityName: string): void {
@@ -107,20 +129,18 @@ export class Player {
     this.state.currentLocation = locationId
   }
 
-  incrementDeliveryVisits(): void {
-    this.state.deliveryVisits++
-  }
-
   canAfford(amount: number): boolean {
     return this.state.cash >= amount
   }
 
   hasSpace(amount: number): boolean {
-    return (this.state.maxCapacity - this.state.totalGoods) >= amount
+    const max = this.getEffectiveMaxCapacity()
+    return (max - this.state.totalGoods) >= amount
   }
 
   getAvailableSpace(): number {
-    return Math.max(0, this.state.maxCapacity - this.state.totalGoods)
+    const max = this.getEffectiveMaxCapacity()
+    return Math.max(0, max - this.state.totalGoods)
   }
 
   getTotalAssets(): number {

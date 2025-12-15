@@ -104,7 +104,7 @@ const dialogVisible = computed({
   set: (value) => emit('update:modelValue', value)
 })
 
-const costPerPoint = gameConfig.buildings.hospital.costPerPoint
+const costPerPoint = gameConfig.buildings.hospital.costPerPoint ?? 350
 const maxPoints = computed(() => {
   const healthDeficit = 100 - props.gameState.health
   const maxByCash = Math.floor(props.gameState.cash / costPerPoint)

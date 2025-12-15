@@ -87,16 +87,30 @@ export class MoneyEventHandler {
               message = event.message
             }
           }
-        } else if (event.cashMultiplier > 0) {
-          // cashMultiplier 表示减少的百分比
-          // 例如 cashMultiplier: 5 表示减少5%的现金
-          const loss = Math.floor((this.state.cash / 100) * event.cashMultiplier)
-          this.state.cash -= loss
-          if (this.state.cash < 0) this.state.cash = 0
-          if (loss > 0) {
-            message = `${event.message}，现金减少了${loss.toLocaleString()}元`
+        } else if (event.cashMultiplier !== undefined && event.cashMultiplier !== 0) {
+          // 非 cashBased 且带 cashMultiplier 的事件：
+          //  - cashMultiplier > 0 表示按百分比扣钱（花钱/亏钱）
+          //  - cashMultiplier < 0 表示按百分比赚钱（收入/赚了一笔）
+          const rate = Math.abs(event.cashMultiplier)
+          const delta = Math.floor((this.state.cash / 100) * rate)
+          
+          if (event.cashMultiplier > 0) {
+            // 扣钱
+            this.state.cash -= delta
+            if (this.state.cash < 0) this.state.cash = 0
+            if (delta > 0) {
+              message = `${event.message}，现金减少了${delta.toLocaleString()}元`
+            } else {
+              message = event.message
+            }
           } else {
-            message = event.message
+            // 赚钱
+            this.state.cash += delta
+            if (delta > 0) {
+              message = `${event.message}，赚了${delta.toLocaleString()}元！`
+            } else {
+              message = event.message
+            }
           }
         }
         

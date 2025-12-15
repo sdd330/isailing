@@ -6,6 +6,7 @@ import { Random } from '../utils/Random'
 import { GoodsManager } from '../managers/GoodsManager'
 import { GoodsLibraryManager } from '../managers/GoodsLibraryManager'
 import { debugLog, debugError } from '../../utils/debug'
+import { getSolarTermForState, isTransitionSeason } from '@/utils/season'
 
 export class CommercialEventHandler {
   private goodsManager: GoodsManager
@@ -22,9 +23,25 @@ export class CommercialEventHandler {
   }
 
   process(): void {
+    const term = getSolarTermForState(this.state, this.config)
+    const season = term.season
+    const isTransition = isTransitionSeason(season)
+
     let eventTriggered = false
     
     this.events.forEach((event, index) => {
+      // 如果事件配置了季节/节气标签，则只在对应时间段考虑触发
+      if (event.tags && event.tags.length > 0) {
+        const matchSeason =
+          event.tags.includes(season) ||
+          event.tags.includes(term.name) ||
+          (isTransition && event.tags.includes('transition'))
+
+        if (!matchSeason) {
+          return
+        }
+      }
+
       const randomNum = Random.num(this.config.random.commercialRange)
       if (randomNum % event.freq === 0) {
         // 使用 goodsId 直接查找商品，而不是使用索引
@@ -171,6 +188,17 @@ export class CommercialEventHandler {
     
     if (!eventTriggered && this.events.length > 0) {
       const availableEvents = this.events.filter((event) => {
+        // 按标签过滤可用事件
+        if (event.tags && event.tags.length > 0) {
+          const matchSeason =
+            event.tags.includes(season) ||
+            event.tags.includes(term.name) ||
+            (isTransition && event.tags.includes('transition'))
+          if (!matchSeason) {
+            return false
+          }
+        }
+
         const goods = this.state.goods.find(g => g.id === event.goodsId)
         return goods && goods.price > 0
       })

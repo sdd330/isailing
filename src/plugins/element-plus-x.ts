@@ -10,6 +10,7 @@ import type { App } from 'vue'
  * 组件会自动按需导入
  */
 export function setupElementPlusX(_app?: App): void {
+  void _app
   // Element Plus X 使用按需导入，无需全局注册
   // 如果需要全局注册，可以取消下面的注释：
   // import ElementPlusX from 'vue-element-plus-x'

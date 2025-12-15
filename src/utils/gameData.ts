@@ -1,11 +1,3 @@
-import { currentTheme } from '@/config/theme.config'
-
-export const GOODS_DATA = currentTheme.goods
-export const COMMERCIAL_EVENTS = currentTheme.events.commercial
-export const HEALTH_EVENTS = currentTheme.events.health
-export const MONEY_EVENTS = currentTheme.events.money
-export const LOCATIONS = currentTheme.city.locations
-
 import { gameConfig } from '@/config/game.config'
 
 export const GAME_CONSTANTS = {
@@ -20,7 +12,6 @@ export const GAME_CONSTANTS = {
   DEBT_INTEREST_RATE: gameConfig.financial.debtInterestRate,
   BANK_INTEREST_RATE: gameConfig.financial.bankInterestRate,
   HOSPITAL_COST_PER_POINT: gameConfig.buildings.hospital.costPerPoint,
-  DELIVERY_COST: gameConfig.buildings.delivery.cost,
   HOUSE_EXPANSION_COST: gameConfig.buildings.house.expansionCost,
   HOUSE_DISCOUNT_THRESHOLD: gameConfig.buildings.house.discountThreshold,
   MAX_DEBT_LIMIT: gameConfig.financial.maxDebtLimit,

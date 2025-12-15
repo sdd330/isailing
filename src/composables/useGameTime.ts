@@ -4,6 +4,7 @@ import { useGameStore } from '@/stores/game'
 import { gameConfig } from '@/config/game.config'
 import type { ChatMessage } from './useGameChat'
 import type { GameState } from '@/types/game'
+import { getSolarTermForState } from '@/utils/season'
 
 export function useGameTime(
   gameState: Ref<GameState>,
@@ -30,16 +31,25 @@ export function useGameTime(
       const currentTime = gameConfig.time.totalWeeks + 1 - gameState.value.timeLeft
       
       gameStore.nextTime()
+
+      const term = getSolarTermForState(gameState.value, gameConfig)
+      const seasonTextMap: Record<string, string> = {
+        spring: '春季',
+        summer: '夏季',
+        autumn: '秋季',
+        winter: '冬季'
+      }
+      const seasonText = seasonTextMap[term.season] || ''
       
       addMessage({
         type: 'system',
-        content: `🌅 第 ${currentTime} ${gameConfig.time.unit}开始了！`,
+        content: `🌅 第 ${currentTime} ${gameConfig.time.unit}开始了！\n当前节气：${term.icon} ${term.name}${seasonText ? `（${seasonText}）` : ''}\n提示：${term.description}`,
         icon: '🌅'
       }, true)
       
       setTimeout(() => {
-        // 显示商品市场消息，但不自动打开抽屉
-        // 用户需要自己点击"查看商品市场"来打开抽屉
+        // 显示商品黑市消息，但不自动打开抽屉
+        // 用户需要自己点击"查看商品黑市"来打开抽屉
         showMarket(addMessage)
         isProcessing.value = false
       }, 2000)

@@ -86,7 +86,7 @@
                     <div class="text-xl">🏢</div>
                     <div>
                       <div class="font-medium text-gray-900">建筑服务系统</div>
-                      <div class="text-sm text-gray-600">银行、医院、网吧、房屋扩建</div>
+                      <div class="text-sm text-gray-600">银行、医院、创业空间、中介</div>
                     </div>
                   </div>
                   <div class="flex items-center gap-3 p-3 bg-orange-50 rounded-lg">

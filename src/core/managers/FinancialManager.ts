@@ -7,7 +7,8 @@ export class FinancialManager extends BaseManager {
   constructor(
     state: GameState,
     config: GameConfig,
-    messageHandler: IMessageHandler
+    messageHandler: IMessageHandler,
+    private checkGameOver?: () => boolean
   ) {
     super(state, config, messageHandler)
   }
@@ -71,6 +72,12 @@ export class FinancialManager extends BaseManager {
       if (this.state.health < 0) {
         this.state.health = 0
       }
+
+      // 检查健康值是否为0导致游戏结束
+      if (this.state.health <= 0) {
+        this.checkGameOver?.()
+      }
+
       return true
     }
     return false

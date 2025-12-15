@@ -1,6 +1,5 @@
 import type { Goods } from '@/types/game'
-import type { ThemeConfig } from '@/config/theme.config'
-import { availableCities } from '@/config/theme.config'
+import { configManager } from '@/config/theme.config'
 import { debugLog, debugError } from '../../utils/debug'
 
 /**
@@ -24,46 +23,52 @@ export class GoodsLibraryManager {
     const eventGoodsIds = new Set<number>()
 
     // 第一步：收集所有事件中使用的商品ID
-    availableCities.forEach(city => {
-      // 收集商业事件中的商品ID
-      city.theme.events.commercial?.forEach(event => {
-        if (event.goodsId !== undefined) {
-          eventGoodsIds.add(event.goodsId)
-        }
-      })
+    configManager.getCityList().forEach(cityInfo => {
+      const city = configManager.getCityConfig(cityInfo.key)
+      if (city) {
+        // 收集商业事件中的商品ID
+        city.getEventStrategy().getCommercialEvents().forEach(event => {
+          if (event.goodsId > 0) {
+            eventGoodsIds.add(event.goodsId)
+          }
+        })
+      }
     })
 
     debugLog(`[GoodsLibrary] 收集到 ${eventGoodsIds.size} 个事件商品ID: [${Array.from(eventGoodsIds).sort((a, b) => a - b).join(', ')}]`)
 
     // 第二步：遍历所有城市，收集所有商品定义
-    // 商品ID是全局唯一的（城市ID * 10 + 商品index），所以直接收集即可
-    availableCities.forEach(city => {
-      city.theme.goods.forEach((goodsDef) => {
-        // 验证商品ID是否正确（用于调试）
-        // 商品ID应该是：城市ID * 10 + index
-        // 但为了灵活性，我们直接使用配置中的ID，并验证其唯一性
-        
-        // 商品ID现在是全局唯一的，直接添加
-        if (!goodsMap.has(goodsDef.id)) {
-          goodsMap.set(goodsDef.id, {
-            ...goodsDef,
-            price: 0,
-            owned: 0
-          })
-          debugLog(`[GoodsLibrary] 添加商品: ${goodsDef.name}(id=${goodsDef.id}) from ${city.theme.city.name}`)
-        } else {
-          // 如果商品ID已存在，更新基础价格和价格范围（保留 owned 和 price）
-          const existingGoods = goodsMap.get(goodsDef.id)!
-          goodsMap.set(goodsDef.id, {
-            ...existingGoods,
-            basePrice: goodsDef.basePrice,
-            priceRange: goodsDef.priceRange
-          })
-          debugLog(`[GoodsLibrary] 更新商品定义: ${goodsDef.name}(id=${goodsDef.id}) from ${city.theme.city.name}`)
-        }
-      })
+    // 商品ID是全局唯一的，直接收集即可
+    configManager.getCityList().forEach(cityInfo => {
+      const city = configManager.getCityConfig(cityInfo.key)
+      if (city) {
+        city.getGoods().forEach((goodsDef) => {
+          // 验证商品ID是否正确（用于调试）
+          // 商品ID应该是：城市ID * 100000 + index
+          // 但为了灵活性，我们直接使用配置中的ID，并验证其唯一性
+
+          // 商品ID现在是全局唯一的，直接添加
+          if (!goodsMap.has(goodsDef.id)) {
+            goodsMap.set(goodsDef.id, {
+              ...goodsDef,
+              price: 0,
+              owned: 0
+            })
+            debugLog(`[GoodsLibrary] 添加商品: ${goodsDef.name}(id=${goodsDef.id}) from ${city.getCityName()}`)
+          } else {
+            // 如果商品ID已存在，更新基础价格和价格范围（保留 owned 和 price）
+            const existingGoods = goodsMap.get(goodsDef.id)!
+            goodsMap.set(goodsDef.id, {
+              ...existingGoods,
+              basePrice: goodsDef.basePrice,
+              priceRange: goodsDef.priceRange
+            })
+            debugLog(`[GoodsLibrary] 更新商品定义: ${goodsDef.name}(id=${goodsDef.id}) from ${city.getCityName()}`)
+          }
+        })
+      }
     })
-    
+
     debugLog(`[GoodsLibrary] 商品ID验证完成，共 ${goodsMap.size} 个唯一商品ID: [${Array.from(goodsMap.keys()).sort((a, b) => a - b).join(', ')}]`)
 
     // 第三步：确保所有事件中使用的商品ID都有对应的商品定义
@@ -73,19 +78,22 @@ export class GoodsLibraryManager {
       if (!goodsMap.has(goodsId)) {
         missingGoodsIds.push(goodsId)
         // 查找第一个定义了这个商品ID的城市
-        for (const city of availableCities) {
-          const goodsDef = city.theme.goods.find(g => g.id === goodsId)
-          if (goodsDef) {
-            goodsMap.set(goodsId, {
-              ...goodsDef,
-              price: 0,
-              owned: 0
-            })
-            debugLog(`[GoodsLibrary] 从事件中发现缺失商品: ${goodsDef.name}(id=${goodsId})，使用 ${city.theme.city.name} 的定义`)
-            break
+        for (const cityInfo of configManager.getCityList()) {
+          const city = configManager.getCityConfig(cityInfo.key)
+          if (city) {
+            const goodsDef = city.getGoods().find(g => g.id === goodsId)
+            if (goodsDef) {
+              goodsMap.set(goodsId, {
+                ...goodsDef,
+                price: 0,
+                owned: 0
+              })
+              debugLog(`[GoodsLibrary] 从事件中发现缺失商品: ${goodsDef.name}(id=${goodsId})，使用 ${city.getCityName()} 的定义`)
+              break
+            }
           }
         }
-        
+
         // 如果仍然找不到，记录错误
         if (!goodsMap.has(goodsId)) {
           debugError(`[GoodsLibrary] 错误：事件中使用的商品ID ${goodsId} 在所有城市都没有定义！`)
@@ -116,12 +124,12 @@ export class GoodsLibraryManager {
   }
 
   /**
-   * 根据当前城市主题更新商品库
+   * 根据城市配置更新商品库
    * 直接修改现有商品数组，而不是创建新数组，以保持 Vue 响应式
-   * 只更新当前城市定义的商品的 basePrice 和 priceRange
+   * 只更新指定城市定义的商品的 basePrice 和 priceRange
    * 保留 owned 和 price
    */
-  updateGoodsForCity(currentGoods: Goods[], theme: ThemeConfig): Goods[] {
+  updateGoodsForCity(currentGoods: Goods[], cityKey: string): Goods[] {
     // 创建商品ID到当前商品的映射，保留 owned 和 price
     const currentGoodsMap = new Map<number, Goods>()
     currentGoods.forEach(g => {
@@ -134,8 +142,15 @@ export class GoodsLibraryManager {
     // 创建新商品数组（因为需要重新排序和添加新商品）
     const updatedGoods: Goods[] = []
 
+    // 获取当前城市的配置
+    const city = configManager.getCityConfig(cityKey)
+    if (!city) {
+      debugError(`[GoodsLibrary] 城市配置未找到: ${cityKey}`)
+      return currentGoods
+    }
+
     // 首先添加当前城市定义的商品，保留 owned 和 price
-    theme.goods.forEach(goodsDef => {
+    city.getGoods().forEach(goodsDef => {
       const existingGoods = currentGoodsMap.get(goodsDef.id)
       const owned = existingGoods?.owned ?? 0
       const price = existingGoods?.price ?? 0
@@ -150,13 +165,13 @@ export class GoodsLibraryManager {
     })
 
     // 然后添加玩家已拥有但当前城市没有定义的商品
-    const cityGoodsIds = new Set(theme.goods.map(g => g.id))
+    const cityGoodsIds = new Set(city.getGoods().map(g => g.id))
     currentGoods.forEach(g => {
       if (g.owned > 0 && !cityGoodsIds.has(g.id)) {
         // 保留这个商品，即使当前城市没有定义它
         updatedGoods.push({
           ...g,
-          price: 0 // 价格设为0，因为当前城市没有这个商品的市场
+          price: 0 // 价格设为0，因为当前城市没有这个商品的黑市
         })
         debugLog(`[GoodsLibrary] 保留跨城市商品: ${g.name}(id=${g.id}), owned=${g.owned}`)
       }
@@ -171,16 +186,22 @@ export class GoodsLibraryManager {
       debugLog(`[GoodsLibrary] 更新后的商品:`, updatedGoods.map(g => `${g.name}(id=${g.id}, owned=${g.owned})`))
     }
 
-    debugLog(`[GoodsLibrary] 更新商品库: 当前城市 ${theme.city.name}, 商品总数 ${updatedGoods.length}, 已拥有商品 ${updatedGoods.filter(g => g.owned > 0).length}`)
+    debugLog(`[GoodsLibrary] 更新商品库: 当前城市 ${city.getCityName()}, 商品总数 ${updatedGoods.length}, 已拥有商品 ${updatedGoods.filter(g => g.owned > 0).length}`)
 
     return updatedGoods
   }
 
   /**
-   * 创建初始商品库（基于指定城市主题）
+   * 创建初始商品库（基于指定城市）
    */
-  createInitialGoods(theme: ThemeConfig): Goods[] {
-    return theme.goods.map(g => ({
+  createInitialGoods(cityKey: string): Goods[] {
+    const city = configManager.getCityConfig(cityKey)
+    if (!city) {
+      debugError(`[GoodsLibrary] 城市配置未找到: ${cityKey}`)
+      return []
+    }
+
+    return city.getGoods().map(g => ({
       ...g,
       price: 0,
       owned: 0

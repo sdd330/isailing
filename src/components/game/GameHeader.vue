@@ -7,9 +7,15 @@
             <el-avatar v-if="currentTheme.game" :size="32" :class="`bg-gradient-to-br ${currentTheme.game.logoColor} shadow-lg`">
               <span class="text-white text-sm font-bold">{{ currentTheme.game.logo }}</span>
             </el-avatar>
-            <h1 class="text-sm font-bold text-gray-800 m-0 text-center">
-              魔都i启航 荣耀上海滩 · 剩余 {{ gameState.timeLeft }}{{ timeUnit }}
-            </h1>
+            <div class="flex flex-col items-center">
+              <h1 class="text-sm font-bold text-gray-800 m-0 text-center">
+                {{ currentTheme.game.title }} · {{ currentTheme.city.name }} · {{ currentLocationName }} · 剩余 {{ gameState.timeLeft }}{{ timeUnit }}
+              </h1>
+              <div class="text-[11px] text-gray-600 mt-0.5" v-if="solarTerm">
+                <span>{{ solarTerm.icon }} {{ solarTerm.name }}</span>
+                <span class="ml-1 text-gray-400">· {{ solarTerm.description }}</span>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -34,6 +40,10 @@
             <span class="mr-1">❤️</span>
             <span>{{ gameState.health }}/100</span>
           </el-tag>
+          <el-tag :type="gameState.stamina >= 70 ? 'success' : gameState.stamina >= 30 ? 'warning' : 'danger'" size="small" class="stat-tag-mobile">
+            <span class="mr-1">⚡</span>
+            <span>{{ gameState.stamina }}/{{ gameState.maxStamina }}</span>
+          </el-tag>
           <el-tag type="warning" size="small" class="stat-tag-mobile">
             <span class="mr-1">⭐</span>
             <span>{{ gameState.fame }}</span>
@@ -49,9 +59,15 @@
             <el-avatar v-if="currentTheme.game" :size="48" :class="`bg-gradient-to-br ${currentTheme.game.logoColor} shadow-lg`">
               <span class="text-white text-xl font-bold">{{ currentTheme.game.logo }}</span>
             </el-avatar>
-            <h1 class="text-lg font-bold text-gray-800 m-0 text-center">
-              魔都i启航 荣耀上海滩 · 剩余 {{ gameState.timeLeft }}{{ timeUnit }}
-            </h1>
+            <div class="flex flex-col items-center">
+              <h1 class="text-lg font-bold text-gray-800 m-0 text-center">
+                {{ currentTheme.game.title }} · {{ currentTheme.city.name }} · {{ currentLocationName }} · 剩余 {{ gameState.timeLeft }}{{ timeUnit }}
+              </h1>
+              <div class="text-xs text-gray-600 mt-0.5" v-if="solarTerm">
+                <span>{{ solarTerm.icon }} {{ solarTerm.name }}</span>
+                <span class="ml-1 text-gray-400">· {{ solarTerm.description }}</span>
+              </div>
+            </div>
           </div>
         </div>
         <div class="flex items-center justify-between w-full flex-wrap gap-2">
@@ -75,6 +91,10 @@
             <span class="mr-1">❤️</span>
             <span>{{ gameState.health }}/100</span>
           </el-tag>
+          <el-tag :type="gameState.stamina >= 70 ? 'success' : gameState.stamina >= 30 ? 'warning' : 'danger'" size="small" class="stat-tag">
+            <span class="mr-1">⚡</span>
+            <span>{{ gameState.stamina }}/{{ gameState.maxStamina }}</span>
+          </el-tag>
           <el-tag type="warning" size="small" class="stat-tag">
             <span class="mr-1">⭐</span>
             <span>{{ gameState.fame }}</span>
@@ -91,9 +111,9 @@ import { computed } from 'vue'
 import type { GameState } from '@/types/game'
 import type { TimeEvent } from '@/composables/useGameEvents'
 import { gameConfig } from '@/config/game.config'
-import { availableCities, shanghaiTheme } from '@/config/theme.config'
-import type { ThemeConfig } from '@/config/theme.config'
+import { getCity, getCityKeyByName } from '@/config/theme.config'
 import { useMobile } from '@/composables/useMobile'
+import { getSolarTermByWeek, type SolarTerm } from '@/utils/season'
 import EventDisplay from './EventDisplay.vue'
 
 interface Props {
@@ -115,29 +135,105 @@ const formatNumber = (num: number): string => {
 
 const timeUnit = computed(() => gameConfig?.time?.unit || '周')
 
-const currentTheme = computed<ThemeConfig>(() => {
-  try {
-    if (!props.gameState || !props.gameState.currentCity) {
-      return shanghaiTheme
+const solarTerm = computed<SolarTerm | null>(() => {
+  const totalWeeks = gameConfig.time.totalWeeks || 52
+  if (!props.gameState) return null
+  const week = totalWeeks + 1 - props.gameState.timeLeft
+  if (week < 1 || week > totalWeeks) return null
+  return getSolarTermByWeek(week, totalWeeks)
+})
+
+const currentTheme = computed(() => {
+  if (!props.gameState || !props.gameState.currentCity) {
+    const defaultCity = getCity('shanghai')
+    return defaultCity ? {
+      game: {
+        title: `${defaultCity.getCityName()}创业记`,
+        logo: defaultCity.getShortName(),
+        logoColor: 'from-blue-500 to-cyan-500',
+        description: '魔都创业记'
+      },
+      city: {
+        name: defaultCity.getCityName(),
+        shortName: defaultCity.getShortName(),
+        locations: defaultCity.getLocations()
+      }
+    } : {
+      game: {
+        title: '上海创业记',
+        logo: '沪',
+        logoColor: 'from-blue-500 to-cyan-500',
+        description: '魔都创业记'
+      },
+      city: {
+        name: '上海',
+        shortName: '沪',
+        locations: []
+      }
     }
-    
-    const cityInfo = availableCities.find(c => c.name === props.gameState.currentCity)
-    if (cityInfo && cityInfo.theme && cityInfo.theme.game) {
-      return cityInfo.theme
-    }
-    
-    if (availableCities.length > 0 && availableCities[1] && availableCities[1].theme && availableCities[1].theme.game) {
-      return availableCities[1].theme
-    }
-    
-    if (shanghaiTheme && shanghaiTheme.game) {
-      return shanghaiTheme
-    }
-    
-    throw new Error('No valid theme found')
-  } catch {
-    return shanghaiTheme
   }
+
+  const cityKey = getCityKeyByName(props.gameState.currentCity)
+  const currentCity = getCity(cityKey) || getCity('shanghai')
+  if (currentCity) {
+    return {
+      game: {
+        title: `${currentCity.getCityName()}创业记`,
+        logo: currentCity.getShortName(),
+        logoColor: 'from-blue-500 to-cyan-500',
+        description: `${currentCity.getCityName()}创业记`
+      },
+      city: {
+        name: currentCity.getCityName(),
+        shortName: currentCity.getShortName(),
+        locations: currentCity.getLocations()
+      }
+    }
+  }
+
+  // 默认返回上海
+  const shanghaiCity = getCity('shanghai')
+  if (shanghaiCity) {
+    return {
+      game: {
+        title: `${shanghaiCity.getCityName()}创业记`,
+        logo: shanghaiCity.getShortName(),
+        logoColor: 'from-blue-500 to-cyan-500',
+        description: '魔都创业记'
+      },
+      city: {
+        name: shanghaiCity.getCityName(),
+        shortName: shanghaiCity.getShortName(),
+        locations: shanghaiCity.getLocations()
+      }
+    }
+  }
+  // 最后的默认值
+  return {
+    game: {
+      title: '上海创业记',
+      logo: '沪',
+      logoColor: 'from-blue-500 to-cyan-500',
+      description: '魔都创业记'
+    },
+    city: {
+      name: '上海',
+      shortName: '沪',
+      locations: []
+    }
+  }
+})
+
+const currentLocationName = computed(() => {
+  if (!props.gameState) return '市中心'
+  const locationId = props.gameState.currentLocation
+  const city = currentTheme.value.city
+  const locations = Array.isArray(city.locations) ? city.locations as Array<{ id: number; name: string }> : []
+  if (!locations.length || locationId == null || locationId < 0) {
+    return '市中心'
+  }
+  const found = locations.find(l => l.id === locationId)
+  return found?.name || '市中心'
 })
 </script>
 

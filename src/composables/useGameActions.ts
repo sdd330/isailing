@@ -1,18 +1,103 @@
 import { computed } from 'vue'
 import { useGameStore } from '@/stores/game'
 import { gameConfig } from '@/config/game.config'
-import { availableCities, shanghaiTheme } from '@/config/theme.config'
+import { getAvailableCities, getCity, configManager, getCityKeyByName } from '@/config/theme.config'
 import type { ChatMessage } from './useGameChat'
 import { debugLog, debugError } from '@/utils/debug'
+
+import type { GoodsDefinition, LocationDefinition } from '@/types/game'
+import type { BuildingConfig } from '@/config/ConfigManager'
+
+interface CityTheme {
+  game: {
+    title: string
+    logo: string
+    logoColor: string
+    description: string
+  }
+  city: {
+    name: string
+    shortName: string
+    locations: LocationDefinition[]
+  }
+  goods: GoodsDefinition[]
+  buildings: BuildingConfig
+  transportation: {
+    subwayFare: number
+  }
+}
 
 export function useGameActions() {
   const gameStore = useGameStore()
   const gameState = computed(() => gameStore.gameState)
 
-  // 获取当前城市的主题配置，用于获取随机事件相关的商品
-  const getCurrentCityTheme = () => {
-    const cityInfo = availableCities.find(c => c.name === gameState.value.currentCity)
-    return cityInfo?.theme || availableCities[0]?.theme || shanghaiTheme
+  // 获取当前城市的配置
+  const getCurrentCityTheme = (): CityTheme => {
+    const cityKey = getCityKeyByName(gameState.value.currentCity || '上海')
+    const currentCity = getCity(cityKey) || getCity('shanghai')
+    if (currentCity) {
+      return {
+        game: {
+          title: `${currentCity.getCityName()}创业记`,
+          logo: currentCity.getShortName(),
+          logoColor: 'from-blue-500 to-cyan-500',
+          description: `${currentCity.getCityName()}创业记`
+        },
+        city: {
+          name: currentCity.getCityName(),
+          shortName: currentCity.getShortName(),
+          locations: currentCity.getLocations()
+        },
+        goods: currentCity.getGoods(),
+        buildings: currentCity.getBuildings(),
+        transportation: {
+          subwayFare: configManager.getSubwayFare(cityKey)
+        }
+      }
+    }
+    // 默认返回上海
+    const shanghaiCity = getCity('shanghai')
+    return shanghaiCity ? {
+      game: {
+        title: `${shanghaiCity.getCityName()}创业记`,
+        logo: shanghaiCity.getShortName(),
+        logoColor: 'from-blue-500 to-cyan-500',
+        description: '魔都创业记'
+      },
+      city: {
+        name: shanghaiCity.getCityName(),
+        shortName: shanghaiCity.getShortName(),
+        locations: shanghaiCity.getLocations()
+      },
+      goods: shanghaiCity.getGoods(),
+      buildings: shanghaiCity.getBuildings(),
+      transportation: {
+        subwayFare: configManager.getSubwayFare('shanghai')
+      }
+    } : {
+      game: {
+        title: '上海创业记',
+        logo: '沪',
+        logoColor: 'from-blue-500 to-cyan-500',
+        description: '魔都创业记'
+      },
+      city: {
+        name: '上海',
+        shortName: '沪',
+        locations: []
+      },
+      goods: [],
+      buildings: {
+        bank: { name: '银行', icon: '🏦' },
+        hospital: { name: '医院', icon: '🏥' },
+        constructionSite: { name: '打工', icon: '💼', workTypes: [] },
+        postOffice: { name: '邮局', icon: '📬' },
+        house: { name: '中介', icon: '🏠' }
+      },
+      transportation: {
+        subwayFare: 3
+      }
+    }
   }
 
   const ownedGoods = computed(() => 
@@ -26,11 +111,12 @@ export function useGameActions() {
       return
     }
     
-    // 如果提供了 addMessage，则显示商品市场消息（不带购买选项）
+    // 如果提供了 addMessage，则显示商品黑市消息（不带购买选项）
     if (addMessage) {
       const theme = getCurrentCityTheme()
       const marketManager = gameStore.marketManager
-      const marketInfo = marketManager.getMarketInfo(theme)
+      const cityGoodsIds = new Set(theme.goods.map(g => g.id))
+      const marketInfo = marketManager.getMarketInfo(theme.city.name, cityGoodsIds)
 
       const marketText = marketManager.formatMarketText(marketInfo)
 
@@ -78,95 +164,71 @@ export function useGameActions() {
   }
 
   const getTransportationCost = (fromCity: string, toCity: string, type: 'train' | 'plane'): number => {
-    if (!gameConfig.transportation || !gameConfig.transportation[type]) {
-      debugError(`交通配置不存在: transportation.${type}`)
-      return 0
+    // 使用配置管理器计算交通费用
+    const fromKey = getCityKeyByName(fromCity)
+    const toKey = getCityKeyByName(toCity)
+    const cost = configManager.getTransportationCost(fromKey, toKey, type)
+    if (cost && cost > 0) {
+      debugLog(`交通费用: ${cost}元 (${fromCity} -> ${toCity}, ${type})`)
+      return cost
     }
-    
-    const costs = gameConfig.transportation[type]
-    
-    const cityMap: Record<string, string> = {
-      '北京': 'beijing',
-      '上海': 'shanghai',
-      '广州': 'guangzhou'
-    }
-    
-    const fromKey = cityMap[fromCity]
-    const toKey = cityMap[toCity]
-    
-    if (!fromKey || !toKey) {
-      debugError(`无法找到城市映射: ${fromCity} -> ${fromKey}, ${toCity} -> ${toKey}`)
-      return 0
-    }
-    
-    const routeKey1 = `${fromKey}${toKey.charAt(0).toUpperCase() + toKey.slice(1)}`
-    const routeKey2 = `${toKey}${fromKey.charAt(0).toUpperCase() + fromKey.slice(1)}`
-    
-    if (routeKey1 in costs) {
-      const cost = costs[routeKey1 as keyof typeof costs]
-      if (typeof cost === 'number' && cost > 0) {
-        debugLog(`找到路由 ${routeKey1}: ${cost}元 (${fromCity} -> ${toCity}, ${type})`)
-        return cost
-      }
-    }
-    if (routeKey2 in costs) {
-      const cost = costs[routeKey2 as keyof typeof costs]
-      if (typeof cost === 'number' && cost > 0) {
-        debugLog(`找到路由 ${routeKey2}: ${cost}元 (${fromCity} -> ${toCity}, ${type})`)
-        return cost
-      }
-    }
-    
-    debugError(`无法找到路由配置: ${routeKey1} 或 ${routeKey2}`, '可用路由:', Object.keys(costs), 'fromCity:', fromCity, 'toCity:', toCity, 'type:', type)
+
+    debugError('无法找到路由配置', { type, fromCity, toCity })
     return 0
   }
 
   const showBuildings = (addMessage: (msg: ChatMessage, stream?: boolean) => void) => {
     const { buildings: buildingConfig } = getCurrentCityTheme()
+    const currentTheme = getCurrentCityTheme()
+    const subwayFare = currentTheme.transportation?.subwayFare ?? 0
+
     const buildings = [
-      { 
-        name: buildingConfig.bank.name, 
-        icon: buildingConfig.bank.icon, 
-        description: '存款取款服务', 
-        action: 'bank' 
+      {
+        name: buildingConfig.bank.name,
+        icon: buildingConfig.bank.icon,
+        description: '存款取款服务',
+        action: 'bank'
       },
-      { 
-        name: buildingConfig.hospital.name, 
-        icon: buildingConfig.hospital.icon, 
-        description: '治疗健康', 
-        action: 'hospital' 
+      {
+        name: buildingConfig.hospital.name,
+        icon: buildingConfig.hospital.icon,
+        description: '治疗健康',
+        action: 'hospital'
       },
-      { 
-        name: buildingConfig.delivery.name, 
-        icon: buildingConfig.delivery.icon, 
-        description: `${buildingConfig.delivery.description} (${gameConfig.buildings.delivery.cost}元)`, 
-        action: 'delivery', 
-        disabled: gameState.value.cash < gameConfig.buildings.delivery.cost 
-      },
-      { 
-        name: buildingConfig.constructionSite.name, 
-        icon: buildingConfig.constructionSite.icon, 
-        description: buildingConfig.constructionSite.description, 
+      {
+        name: buildingConfig.constructionSite.name || '打工',
+        icon: buildingConfig.constructionSite.icon || '💼',
+        description: buildingConfig.constructionSite.description || '选择工作类型赚取收入（建筑工地、送外卖、仓库搬运、餐厅服务员、清洁工）',
         action: 'construction-site'
       },
-      { 
-        name: buildingConfig.postOffice.name, 
-        icon: buildingConfig.postOffice.icon, 
-        description: buildingConfig.postOffice.description, 
-        action: 'post-office' 
+      {
+        name: buildingConfig.postOffice.name,
+        icon: buildingConfig.postOffice.icon,
+        description: buildingConfig.postOffice.description,
+        action: 'post-office'
       },
-      { 
-        name: buildingConfig.house.name, 
-        icon: buildingConfig.house.icon, 
-        description: `${buildingConfig.house.description} (${gameState.value.cash >= gameConfig.buildings.house.discountThreshold ? '半价' : '全价'})`, 
-        action: 'house-expand', 
-        disabled: gameState.value.cash < gameConfig.buildings.house.expansionCost / 2 
+      {
+        name: buildingConfig.house.name,
+        icon: buildingConfig.house.icon,
+        description: buildingConfig.house.description || '通过中介租房，提升仓库容量',
+        action: 'house-menu'
       },
-      { 
-        name: '出行', 
-        icon: '✈️/🚄', 
-        description: '选择交通工具前往其它城市', 
-        action: 'travel-select' 
+      {
+        name: gameConfig.buildings.restaurant?.name || '饭店',
+        icon: gameConfig.buildings.restaurant?.icon || '🍜',
+        description: (() => {
+          const cfg = gameConfig.buildings.restaurant
+          if (!cfg) return '吃饭恢复体力'
+          return '吃饭恢复体力'
+        })(),
+        action: 'restaurant',
+        disabled: gameState.value.cash < (gameConfig.buildings.restaurant?.costRange?.[0] ?? 20)
+      },
+      {
+        name: '出行（地铁）',
+        icon: buildingConfig.subway?.icon || '🚇',
+        description: buildingConfig.subway?.description || '乘坐地铁出行',
+        action: 'subway-travel'
       }
     ]
 
@@ -182,7 +244,7 @@ export function useGameActions() {
     }, true)
   }
 
-  const showTransportationMenu = (addMessage: (msg: ChatMessage, stream?: boolean) => void, type: 'train' | 'plane') => {
+  const showTransportationMenu = (type: 'train' | 'plane') => {
     const currentCity = gameState.value.currentCity
     const uniqueVisits = new Set(gameState.value.cityVisitsThisWeek)
     const canVisitMore = uniqueVisits.size < 2
@@ -190,25 +252,31 @@ export function useGameActions() {
     const transportName = type === 'train' ? '高铁' : '飞机'
     const transportIcon = type === 'train' ? '🚄' : '✈️'
     
-    const cities = availableCities
+    const allCities = getAvailableCities()
+    const cities = allCities
       .filter(city => city.name !== currentCity)
       .map(city => {
-        const cost = getTransportationCost(currentCity, city.name, type)
-        const isDisabled = city.name === currentCity || (!canVisitMore && !uniqueVisits.has(city.name))
+        const rawCost = getTransportationCost(currentCity, city.name, type)
+        const cost = typeof rawCost === 'number' && rawCost > 0 ? rawCost : 0
+        const isDisabled =
+          city.name === currentCity ||
+          (!canVisitMore && !uniqueVisits.has(city.name)) ||
+          cost <= 0
         return {
-          label: `${city.name} (${cost.toLocaleString()}元)${isDisabled ? ' (不可用)' : ''}`,
-          action: 'travel',
-          data: { cityName: city.name, type },
+          cityName: city.name,
+          cost,
+          type,
           disabled: isDisabled || gameState.value.cash < cost
         }
       })
-
-    addMessage({
-      type: 'system',
-      content: `${transportIcon} 选择要前往的城市（${transportName}）：\n当前城市：${currentCity}\n本周已访问：${uniqueVisits.size}/2`,
-      icon: transportIcon,
+    
+    return {
+      currentCity,
+      transportName,
+      transportIcon,
+      uniqueVisitsCount: uniqueVisits.size,
       options: cities
-    }, true)
+    }
   }
 
   const showStatus = (addMessage: (msg: ChatMessage, stream?: boolean) => void, finalScore: number) => {
@@ -229,6 +297,7 @@ ${finalScore > 0 ? `💯 得分: ${finalScore.toLocaleString()}` : ''}`
 
   return {
     ownedGoods,
+    getCurrentCityTheme,
     showMarket,
     showInventory,
     showBuildings,

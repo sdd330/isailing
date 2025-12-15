@@ -1,6 +1,5 @@
 import type { Goods as GoodsData, GameState } from '@/types/game'
 import type { GameConfig } from '@/config/game.config'
-import type { ThemeConfig } from '@/config/theme.config'
 import { MarketFormatter } from '../formatters/MarketFormatter'
 import { Market } from '../models/Market'
 import { Goods } from '../models/Goods'
@@ -35,14 +34,15 @@ export class MarketManager {
   }
 
   /**
-   * 创建或更新市场
+   * 创建或更新黑市
+   * @param cityName 城市名称
+   * @param cityGoodsIds 当前城市可用的商品ID集合（用于过滤）
    */
-  createMarket(theme: ThemeConfig): Market {
-    const market = new Market(theme.city.name)
-    const currentCityGoodsIds = new Set(theme.goods.map(g => g.id))
+  createMarket(cityName: string, cityGoodsIds: Set<number>): Market {
+    const market = new Market(cityName)
     
     this.state.goods.forEach(goodsData => {
-      if (currentCityGoodsIds.has(goodsData.id) && goodsData.price > 0) {
+      if (cityGoodsIds.has(goodsData.id) && goodsData.price > 0) {
         const goods = Goods.fromData(goodsData)
         const canAfford = this.player.canAfford(goods.price)
         const hasSpace = this.player.hasSpace(1)
@@ -71,13 +71,13 @@ export class MarketManager {
   }
 
   /**
-   * 获取当前城市的市场商品列表
-   * 每次调用都重新创建市场，确保价格是最新的
+   * 获取当前城市的黑市商品列表
+   * 每次调用都重新创建黑市，确保价格是最新的
    */
-  getMarketGoods(theme: ThemeConfig): GoodsData[] {
-    // 每次都重新创建市场，确保价格是最新的
+  getMarketGoods(cityName: string, cityGoodsIds: Set<number>): GoodsData[] {
+    // 每次都重新创建黑市，确保价格是最新的
     // 因为随机事件可能已经更新了商品价格
-    this.createMarket(theme)
+    this.createMarket(cityName, cityGoodsIds)
     return this.market!.getAvailableGoods().map(mg => mg.goods)
   }
 
@@ -94,13 +94,13 @@ export class MarketManager {
   }
 
   /**
-   * 获取市场信息
-   * 每次调用都重新创建市场，确保价格是最新的（因为事件可能已经更新了价格）
+   * 获取黑市信息
+   * 每次调用都重新创建黑市，确保价格是最新的（因为事件可能已经更新了价格）
    */
-  getMarketInfo(theme: ThemeConfig): MarketInfo {
-    // 每次都重新创建市场，确保价格是最新的
+  getMarketInfo(cityName: string, cityGoodsIds: Set<number>): MarketInfo {
+    // 每次都重新创建黑市，确保价格是最新的
     // 因为随机事件可能已经更新了商品价格
-    this.createMarket(theme)
+    this.createMarket(cityName, cityGoodsIds)
 
     const marketGoods = this.market!.getAvailableGoods()
     const marketGoodsInfo: MarketGoodsInfo[] = marketGoods.map(mg => ({
@@ -134,7 +134,7 @@ export class MarketManager {
   }
 
   /**
-   * 格式化市场显示文本
+   * 格式化黑市显示文本
    */
   formatMarketText(marketInfo: MarketInfo): string {
     return this.formatter.formatMarketText(marketInfo)
@@ -151,7 +151,7 @@ export class MarketManager {
   }
 
   /**
-   * 获取市场对象
+   * 获取黑市对象
    */
   getMarket(): Market | null {
     return this.market

@@ -31,13 +31,13 @@ export function useGameMenus(
     if (gameState.value.health >= 100) {
       addMessage({
         type: 'system',
-        content: '🏥 你的健康状态良好，不需要治疗。',
+        content: '🏥 你的健康状况良好，不需要治疗。',
         icon: '🏥'
       }, true)
       return
     }
     
-    const costPerPoint = gameConfig.buildings.hospital.costPerPoint
+    const costPerPoint = gameConfig.buildings.hospital.costPerPoint ?? 350
     const availableCash = gameState.value.cash
     
     // 检查是否有足够的现金

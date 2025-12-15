@@ -1,4 +1,4 @@
-import type { Location as LocationData } from '@/types/game'
+import type { LocationDefinition } from '@/types/game'
 
 export enum LocationType {
   TRANSPORTATION_HUB = 'transportation_hub',
@@ -22,16 +22,18 @@ export class Location {
   ) {}
 
   /**
-   * 从数据对象创建 Location 实例
+   * 从地点定义创建 Location 实例
+   * @param definition 地点定义（配置数据）
+   * @param type 地点类型（可选，如果不提供则根据描述自动推断）
    */
-  static fromData(data: LocationData, type?: LocationType): Location {
-    return new Location(data.id, data.name, data.description, type || LocationType.UNKNOWN)
+  static fromDefinition(definition: LocationDefinition, type?: LocationType): Location {
+    return new Location(definition.id, definition.name, definition.description, type || LocationType.UNKNOWN)
   }
 
   /**
-   * 转换为数据对象
+   * 转换为地点定义（用于配置系统）
    */
-  toData(): LocationData {
+  toDefinition(): LocationDefinition {
     return {
       id: this.id,
       name: this.name,

@@ -81,7 +81,7 @@ export function useGameEvents() {
       message.includes('银行服务') ||
       message.includes('医院治疗') ||
       (message.includes('邮局') && !message.includes('邮局扫荡')) ||
-      (message.includes('市场') && !message.includes('价格')) ||
+      (message.includes('黑市') && !message.includes('价格')) ||
       message.includes('库存') ||
       message.includes('建筑服务') ||
       message.includes('成功乘坐') ||

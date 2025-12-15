@@ -3,8 +3,7 @@ import { ref, computed } from 'vue'
 import type { GameState } from '@/types/game'
 import type { IMessageHandler, ISoundPlayer } from '@/core/interfaces/IMessageHandler'
 import { SCORE_EVALUATIONS } from '@/utils/gameData'
-import type { ThemeConfig } from '@/config/theme.config'
-import { availableCities, shanghaiTheme } from '@/config/theme.config'
+import { getCity, getCityKeyByName } from '@/config/theme.config'
 import { gameConfig } from '@/config/game.config'
 import { GameStateManager } from '@/core/managers/GameStateManager'
 import { GoodsManager } from '@/core/managers/GoodsManager'
@@ -13,6 +12,7 @@ import { CityManager } from '@/core/managers/CityManager'
 import { FinancialManager } from '@/core/managers/FinancialManager'
 import { BuildingManager } from '@/core/managers/BuildingManager'
 import { MarketManager } from '@/core/managers/MarketManager'
+import { PredictionMarketManager } from '@/core/managers/PredictionMarketManager'
 
 /**
  * 游戏 Store
@@ -46,24 +46,27 @@ export const useGameStore = defineStore('game', () => {
   let financialManager: FinancialManager | null = null
   let buildingManager: BuildingManager | null = null
   let marketManager: MarketManager | null = null
+  let predictionMarketManager: PredictionMarketManager | null = null
   let cityManager: CityManager | null = null
 
   // ==================== 初始化方法 ====================
-  const getCurrentCityTheme = (): ThemeConfig => {
-    const cityInfo = availableCities.find(c => c.name === gameState.value.currentCity)
-    return cityInfo?.theme || availableCities[1]?.theme || shanghaiTheme
-  }
-
-  const initializeEngine = (theme?: ThemeConfig) => {
-    const currentTheme = theme || getCurrentCityTheme()
+  const initializeEngine = () => {
+    const cityKey = getCityKeyByName(gameState.value.currentCity || '上海')
+    const currentCity = getCity(cityKey) || getCity('shanghai')
+    if (!currentCity) {
+      throw new Error('无法初始化游戏引擎：找不到城市配置')
+    }
     
     if (!gameEngine) {
+      const commercialEvents = currentCity.getEventStrategy().getCommercialEvents()
+      const healthEvents = currentCity.getEventStrategy().getHealthEvents()
+      const moneyEvents = currentCity.getEventStrategy().getMoneyEvents()
       gameEngine = new GameEngine(
         gameState.value,
         gameConfig,
-        currentTheme.events.commercial,
-        currentTheme.events.health,
-        currentTheme.events.money,
+        commercialEvents,
+        healthEvents,
+        moneyEvents,
         SCORE_EVALUATIONS,
         messageHandler,
         soundPlayer
@@ -86,15 +89,16 @@ export const useGameStore = defineStore('game', () => {
     if (!marketManager) {
       marketManager = new MarketManager(gameState.value, gameConfig)
     }
-    
+
+    if (!predictionMarketManager) {
+      predictionMarketManager = new PredictionMarketManager(gameState.value)
+    }
+
     if (!cityManager) {
       cityManager = new CityManager(
         gameState.value,
         gameConfig,
-        messageHandler,
-        (cityName: string, theme: ThemeConfig) => {
-          reinitializeEngine(theme)
-        }
+        messageHandler
       )
     }
     
@@ -113,11 +117,12 @@ export const useGameStore = defineStore('game', () => {
     }
   }
 
-  const reinitializeEngine = (theme: ThemeConfig) => {
-    if (gameEngine) {
-      gameEngine.updateEventHandlers(theme)
-    } else {
-      initializeEngine(theme)
+  const reinitializeEngine = (_theme?: unknown) => {
+    void _theme
+    // 目前 GameEngine 会在每次 nextTime 时根据当前城市自动刷新事件配置
+    // 这里仅在引擎未初始化时触发初始化，避免运行时错误
+    if (!gameEngine) {
+      initializeEngine()
     }
   }
 
@@ -129,6 +134,7 @@ export const useGameStore = defineStore('game', () => {
     financialManager = null
     buildingManager = null
     marketManager = null
+    predictionMarketManager = null
     cityManager = null
     initializeEngine()
   }
@@ -147,7 +153,12 @@ export const useGameStore = defineStore('game', () => {
   })
 
   const hasSpaceForGoods = computed(() => {
-    return gameState.value.totalGoods < gameState.value.maxCapacity
+    const rentedCities = gameState.value.rentedCities || []
+    const base = gameState.value.baseCapacity ?? gameConfig.initial.capacity
+    const effectiveMax = rentedCities.includes(gameState.value.currentCity)
+      ? gameState.value.maxCapacity
+      : base
+    return gameState.value.totalGoods < effectiveMax
   })
 
   // ==================== 商品操作 ====================
@@ -183,25 +194,34 @@ export const useGameStore = defineStore('game', () => {
     return buildingManager!.hospitalTreatment(points)
   }
 
-  const visitDelivery = (): boolean => {
+  const doWork = (workTypeId: string = 'construction'): boolean => {
     ensureManagersInitialized()
-    return buildingManager!.visitDelivery()
+    return buildingManager!.doWork(workTypeId)
   }
 
-  const visitConstructionSite = (): boolean => {
+  const eatAtRestaurant = (): boolean => {
     ensureManagersInitialized()
-    return buildingManager!.visitConstructionSite()
+    return buildingManager!.eatAtRestaurant()
   }
 
-  const expandHouse = (): boolean => {
+  const rentHouse = (houseTypeId: string): boolean => {
     ensureManagersInitialized()
-    return buildingManager!.expandHouse()
+    return buildingManager!.rentHouse(houseTypeId)
+  }
+
+  const takeSubway = (target: 'train' | 'airport'): boolean => {
+    ensureManagersInitialized()
+    return buildingManager!.takeSubway(target)
   }
 
   // ==================== 城市操作 ====================
-  const switchCity = (cityName: string, transportationType: 'train' | 'plane' = 'train'): boolean => {
+  const switchCity = (
+    cityName: string,
+    transportationType: 'train' | 'plane' = 'train',
+    options?: { skipCost?: boolean }
+  ): boolean => {
     ensureManagersInitialized()
-    return cityManager!.switchCity(cityName, transportationType)
+    return cityManager!.switchCity(cityName, transportationType, options)
   }
 
   // ==================== 游戏流程 ====================
@@ -218,7 +238,7 @@ export const useGameStore = defineStore('game', () => {
 
   // ==================== 辅助方法 ====================
   const ensureManagersInitialized = () => {
-    if (!gameEngine || !goodsManager || !financialManager || !buildingManager || !marketManager || !cityManager) {
+    if (!gameEngine || !goodsManager || !financialManager || !buildingManager || !marketManager || !predictionMarketManager || !cityManager) {
       initializeEngine()
     }
   }
@@ -266,6 +286,10 @@ export const useGameStore = defineStore('game', () => {
       ensureManagersInitialized()
       return cityManager!
     },
+    get predictionMarketManager() {
+      ensureManagersInitialized()
+      return predictionMarketManager!
+    },
     get gameEngine() {
       ensureManagersInitialized()
       return gameEngine!
@@ -289,9 +313,10 @@ export const useGameStore = defineStore('game', () => {
     
     // 建筑操作
     hospitalTreatment,
-    visitDelivery,
-    visitConstructionSite,
-    expandHouse,
+    doWork,
+    eatAtRestaurant,
+    rentHouse,
+    takeSubway,
     
     // 城市操作
     switchCity,

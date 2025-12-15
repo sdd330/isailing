@@ -11,7 +11,7 @@
     <div class="tip-dialog-content">
       <p class="tip-main-text">每天都会有新的商品出现，合理买卖商品，处理各种随机事件，保持健康和资金链不断裂。</p>
       <div class="tip-list">
-        <div class="tip-item">🏪 每天查看市场，寻找低价商品买入</div>
+        <div class="tip-item">🏪 每天查看黑市，寻找低价商品买入</div>
         <div class="tip-item">📦 在价格高时卖出商品赚取差价</div>
         <div class="tip-item">🏥 注意保持健康，健康过低会影响游戏</div>
         <div class="tip-item">💸 及时还清债务，避免利息累积</div>

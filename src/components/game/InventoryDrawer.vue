@@ -54,7 +54,6 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
-import { Money } from '@element-plus/icons-vue'
 import { useGameStore } from '@/stores/game'
 import { useMobile } from '@/composables/useMobile'
 

@@ -57,7 +57,6 @@
 <script setup lang="ts">
 import { ref, watch, computed } from 'vue'
 import type { GameState } from '@/types/game'
-import { gameConfig } from '@/config/game.config'
 import { useMobile } from '@/composables/useMobile'
 
 interface Props {

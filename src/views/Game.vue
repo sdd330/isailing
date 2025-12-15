@@ -9,6 +9,8 @@
       @post-office-payment="handlePostOfficePayment"
       @quantity-confirm="handleQuantityConfirm"
       @health-points-confirm="handleHealthPointsConfirm"
+      @subway-location-select="(locationId: number) => handleOptionClick({ action: 'move-location', data: { locationId } })"
+      @travel-select="payload => handleOptionClick({ action: 'travel', data: payload })"
       ref="localDialogsRef"
     />
 
@@ -49,8 +51,10 @@
 import { ref, onMounted, watch, nextTick } from 'vue'
 import { useGameStore } from '@/stores/game'
 import { gameConfig } from '@/config/game.config'
-import { currentTheme } from '@/config/theme.config'
+import { useGameActions } from '@/composables/useGameActions'
 import { useGameLogic } from '@/composables/useGameLogic'
+
+const { getCurrentCityTheme } = useGameActions()
 import { useGameKeyboard } from '@/composables/useGameKeyboard'
 import GameDialogs from '@/components/game/GameDialogs.vue'
 import GameHeader from '@/components/game/GameHeader.vue'
@@ -181,7 +185,7 @@ onMounted(() => {
   nextTick(() => {
     addMessage({
       type: 'system',
-      content: `🎮 欢迎来到《${currentTheme.game.title}》！\n\n你是一名刚到${currentTheme.city.name}的创业者，你有 ${gameState.value.cash.toLocaleString()}元现金和 ${gameState.value.debt.toLocaleString()}元债务。\n\n你需要在${gameConfig.time.totalWeeks}${gameConfig.time.unit}（${gameConfig.time.unitDescription}）内积累财富，还清债务，成为一名成功的企业家！\n\n💡 操作提示：\n• 点击快捷按钮来操作游戏\n• 使用数字键 1-4 快速选择选项\n• 快捷键：M(市场) I(库存) B(建筑) N(下一${gameConfig.time.unit})`,
+      content: `🎮 欢迎来到《${getCurrentCityTheme().game.title}》！\n\n你是一名刚到${getCurrentCityTheme().city.name}的创业者，你有 ${gameState.value.cash.toLocaleString()}元现金和 ${gameState.value.debt.toLocaleString()}元债务，初始健康 ${gameState.value.health} 点，体力 ${gameState.value.stamina} 点。\n\n你需要在${gameConfig.time.totalWeeks}${gameConfig.time.unit}（${gameConfig.time.unitDescription}）内积累财富，还清债务，成为一名成功的企业家！\n\n💡 操作提示：\n• 点击底部快捷按钮来操作游戏：🏪 黑市、🏢 服务、📦 我的、⏭️ 下一${gameConfig.time.unit}\n• 使用数字键 1-4 快速选择对话中的选项\n• 快捷键：M(黑市) I(库存) B(服务) N(下一${gameConfig.time.unit})\n\n🧠 小贴士：\n• 在城市里到处跑（坐地铁换地点）会消耗体力\n• 体力太低时，可以去“服务”里的饭店花钱吃一顿，恢复体力`,
       icon: '🎉'
     }, true)
   })
