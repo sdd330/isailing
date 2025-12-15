@@ -1,0 +1,30 @@
+.dialog-compact :deep(.el-dialog__header),
+.dialog-compact :deep(.el-dialog__footer) {
+  padding: 12px 14px;
+}
+
+.dialog-compact :deep(.el-dialog__body) {
+  padding: 12px 14px;
+}
+
+.dialog-compact :deep(.el-form-item) {
+  margin-bottom: 8px;
+}
+
+.dialog-compact :deep(.el-check-tag.quick-tag),
+.dialog-compact :deep(.el-tag.quick-tag) {
+  cursor: pointer;
+  user-select: none;
+  padding: 4px 8px;
+  font-size: 12px;
+}
+
+.dialog-compact :deep(.el-button--small) {
+  padding: 4px 8px;
+  min-height: 28px;
+}
+
+.dialog-compact :deep(.el-input-number) {
+  --el-input-number-height: 32px;
+}
+

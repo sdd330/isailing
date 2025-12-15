@@ -1,0 +1,321 @@
+/* 基础重置样式 */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+:root {
+  --touch-target-size: 44px;
+}
+
+body {
+  font-family: 'Inter', 'Segoe UI', 'Roboto', -apple-system, BlinkMacSystemFont, 'Microsoft YaHei', sans-serif;
+  background: linear-gradient(135deg, #f0f4ff 0%, #e0e7ff 50%, #f3e8ff 100%);
+  min-height: 100vh;
+  min-height: -webkit-fill-available;
+  color: #111827;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  overscroll-behavior: none;
+  touch-action: pan-y;
+}
+
+#app {
+  min-height: 100vh;
+  min-height: -webkit-fill-available;
+  padding-top: env(safe-area-inset-top);
+  padding-bottom: env(safe-area-inset-bottom);
+  padding-left: env(safe-area-inset-left);
+  padding-right: env(safe-area-inset-right);
+}
+
+button {
+  cursor: pointer;
+  border: none;
+  outline: none;
+  transition: all 0.2s ease;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+
+button:hover:not(:disabled) {
+  transform: translateY(-1px);
+}
+
+button:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+input {
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  padding: 8px 12px;
+  font-size: 14px;
+}
+
+input:focus {
+  outline: none;
+  border-color: #4f46e5;
+  box-shadow: 0 0 0 2px rgba(79, 70, 229, 0.1);
+}
+
+/* 滚动条样式 */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.5), rgba(139, 92, 246, 0.5));
+  border-radius: 4px;
+  transition: background 0.3s;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.7), rgba(139, 92, 246, 0.7));
+}
+
+/* Element Plus 样式覆盖 */
+.el-input__inner {
+  border-radius: 16px !important;
+  border: 2px solid transparent !important;
+  background: rgba(255, 255, 255, 0.9) !important;
+  backdrop-filter: blur(10px) !important;
+  transition: all 0.3s ease !important;
+}
+
+.el-input__inner:focus {
+  border-color: #6366f1 !important;
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1) !important;
+}
+
+.el-button {
+  border-radius: 12px !important;
+  font-weight: 500 !important;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
+  touch-action: manipulation !important;
+  -webkit-tap-highlight-color: transparent !important;
+}
+
+.el-button--primary {
+  background: linear-gradient(135deg, #6366f1, #818cf8) !important;
+  border: none !important;
+  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3) !important;
+}
+
+.el-button--primary:hover {
+  transform: translateY(-1px) !important;
+  box-shadow: 0 6px 20px rgba(99, 102, 241, 0.4) !important;
+}
+
+.desktop-action-btn {
+  min-width: 140px !important;
+  width: 140px !important;
+  text-align: center !important;
+  justify-content: center !important;
+}
+
+.el-card {
+  border-radius: 16px !important;
+  border: none !important;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08) !important;
+  transition: all 0.3s ease !important;
+}
+
+.el-card:hover {
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12) !important;
+  transform: translateY(-2px);
+}
+
+.el-tag {
+  border-radius: 20px !important;
+  font-weight: 500 !important;
+}
+
+
+.el-avatar {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15) !important;
+  border: 2px solid rgba(255, 255, 255, 0.3) !important;
+}
+
+.el-statistic__content {
+  font-weight: 700 !important;
+  font-size: 2rem !important;
+  background: linear-gradient(135deg, #6366f1, #818cf8) !important;
+  -webkit-background-clip: text !important;
+  -webkit-text-fill-color: transparent !important;
+  background-clip: text !important;
+}
+
+/* 移动端 Element Plus 优化 */
+@media (max-width: 768px) {
+
+  .el-card {
+    border-radius: 12px !important;
+  }
+
+  .el-card__body {
+    padding: 12px !important;
+  }
+
+  .el-button {
+    font-size: 14px !important;
+    padding: 10px 18px !important;
+    min-height: var(--touch-target-size) !important;
+  }
+
+  .el-button--large {
+    height: 48px !important;
+    font-size: 16px !important;
+  }
+
+  .el-input__inner {
+    font-size: 16px !important;
+    padding: 12px 16px !important;
+    min-height: var(--touch-target-size) !important;
+  }
+
+  .el-tag {
+    font-size: 12px !important;
+    padding: 4px 10px !important;
+  }
+
+  .el-tag--large {
+    font-size: 14px !important;
+    padding: 6px 12px !important;
+  }
+
+  .el-statistic__number {
+    font-size: 1.5rem !important;
+  }
+
+  .el-header {
+    padding: 8px 12px !important;
+    padding-top: calc(8px + env(safe-area-inset-top)) !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+    overflow: hidden !important;
+    flex-shrink: 0 !important;
+    height: auto !important;
+    min-height: auto !important;
+  }
+
+  .el-footer {
+    padding: 10px 12px !important;
+    padding-bottom: calc(10px + env(safe-area-inset-bottom)) !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+  }
+}
+
+/* 小屏设备优化 */
+@media (max-width: 375px) {
+  .el-tag {
+    font-size: 10px !important;
+    padding: 2px 6px !important;
+  }
+}
+
+/* 动画定义 */
+@keyframes blink {
+  0%, 50% {
+    opacity: 1;
+  }
+  51%, 100% {
+    opacity: 0;
+  }
+}
+
+@keyframes pulse-subtle {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.95;
+  }
+}
+
+@keyframes tip-pulse {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.1);
+  }
+}
+
+@keyframes loading-dot {
+  0%, 80%, 100% {
+    transform: scale(0.8);
+    opacity: 0.5;
+  }
+  40% {
+    transform: scale(1.2);
+    opacity: 1;
+  }
+}
+
+/* 消息气泡按钮样式 */
+.message-bubble button {
+  position: relative;
+  z-index: 10;
+  pointer-events: auto;
+}
+
+/* 聊天区域滚动条 */
+.chat-content-area::-webkit-scrollbar {
+  width: 6px;
+}
+
+.chat-content-area::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.05);
+}
+
+.chat-content-area::-webkit-scrollbar-thumb {
+  background: rgba(99, 102, 241, 0.3);
+  border-radius: 3px;
+  transition: background 0.2s;
+}
+
+.chat-content-area::-webkit-scrollbar-thumb:hover {
+  background: rgba(99, 102, 241, 0.5);
+}
+
+/* 移动端响应式优化 */
+@media (max-width: 768px) {
+  .game-chat {
+    width: 100% !important;
+    max-width: 100% !important;
+    overflow-x: hidden !important;
+  }
+
+  .el-header,
+  .el-footer {
+    overflow-x: hidden !important;
+    overflow-y: hidden !important;
+  }
+
+  * {
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+  }
+}
+
+@media (min-width: 769px) {
+  .el-header {
+    overflow: hidden !important;
+    height: auto !important;
+    min-height: auto !important;
+    max-height: none !important;
+  }
+}

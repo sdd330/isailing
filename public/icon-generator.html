@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>PWA 图标生成器</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 20px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+    }
+    .container {
+      max-width: 800px;
+      margin: 0 auto;
+      background: rgba(255, 255, 255, 0.1);
+      padding: 30px;
+      border-radius: 10px;
+    }
+    canvas {
+      border: 2px solid white;
+      margin: 10px;
+      background: white;
+    }
+    button {
+      padding: 10px 20px;
+      margin: 10px;
+      font-size: 16px;
+      cursor: pointer;
+      background: white;
+      color: #667eea;
+      border: none;
+      border-radius: 5px;
+    }
+    button:hover {
+      background: #f0f0f0;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>PWA 图标生成器</h1>
+    <p>点击按钮生成 PWA 所需的图标文件</p>
+    
+    <canvas id="icon192" width="192" height="192"></canvas>
+    <canvas id="icon512" width="512" height="512"></canvas>
+    
+    <div>
+      <button onclick="generateIcon(192)">生成 192x192 图标</button>
+      <button onclick="generateIcon(512)">生成 512x512 图标</button>
+      <button onclick="generateAppleIcon()">生成 Apple Touch Icon</button>
+    </div>
+    
+    <div id="downloads"></div>
+  </div>
+
+  <script>
+    function generateIcon(size) {
+      const canvas = document.getElementById(`icon${size}`)
+      const ctx = canvas.getContext('2d')
+      
+      // 绘制渐变背景
+      const gradient = ctx.createLinearGradient(0, 0, size, size)
+      gradient.addColorStop(0, '#667eea')
+      gradient.addColorStop(1, '#764ba2')
+      ctx.fillStyle = gradient
+      ctx.fillRect(0, 0, size, size)
+      
+      // 绘制文字
+      ctx.fillStyle = 'white'
+      ctx.font = `bold ${size * 0.3}px Arial`
+      ctx.textAlign = 'center'
+      ctx.textBaseline = 'middle'
+      ctx.fillText('沪', size / 2, size / 2)
+      
+      // 下载
+      canvas.toBlob(blob => {
+        const url = URL.createObjectURL(blob)
+        const a = document.createElement('a')
+        a.href = url
+        a.download = `pwa-${size}x${size}.png`
+        a.click()
+        URL.revokeObjectURL(url)
+      })
+    }
+    
+    function generateAppleIcon() {
+      const canvas = document.createElement('canvas')
+      canvas.width = 180
+      canvas.height = 180
+      const ctx = canvas.getContext('2d')
+      
+      // 绘制渐变背景
+      const gradient = ctx.createLinearGradient(0, 0, 180, 180)
+      gradient.addColorStop(0, '#667eea')
+      gradient.addColorStop(1, '#764ba2')
+      ctx.fillStyle = gradient
+      ctx.fillRect(0, 0, 180, 180)
+      
+      // 绘制文字
+      ctx.fillStyle = 'white'
+      ctx.font = 'bold 54px Arial'
+      ctx.textAlign = 'center'
+      ctx.textBaseline = 'middle'
+      ctx.fillText('沪', 90, 90)
+      
+      // 下载
+      canvas.toBlob(blob => {
+        const url = URL.createObjectURL(blob)
+        const a = document.createElement('a')
+        a.href = url
+        a.download = 'apple-touch-icon.png'
+        a.click()
+        URL.revokeObjectURL(url)
+      })
+    }
+    
+    // 自动生成所有图标
+    window.onload = () => {
+      generateIcon(192)
+      generateIcon(512)
+      generateAppleIcon()
+    }
+  </script>
+</body>
+</html>

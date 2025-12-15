@@ -1,0 +1,54 @@
+{
+  "name": "isailing",
+  "version": "1.0.0",
+  "description": "魔都i启航 - iSailing",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "lint": "eslint . --ext .vue,.js,.jsx,.cjs,.mjs,.ts,.tsx,.cts,.mts --fix",
+    "prepare": "husky",
+    "commit": "cz",
+    "release": "standard-version",
+    "typecheck": "vue-tsc --noEmit"
+  },
+  "dependencies": {
+    "@element-plus/icons-vue": "^2.3.2",
+    "element-plus": "^2.12.0",
+    "pinia": "^3.0.4",
+    "vue": "^3.5.25",
+    "vue-element-plus-x": "^1.3.98",
+    "vue-router": "^4.6.4"
+  },
+  "devDependencies": {
+    "@commitlint/cli": "^20.2.0",
+    "@commitlint/config-conventional": "^20.2.0",
+    "@rushstack/eslint-patch": "^1.15.0",
+    "@types/node": "^25.0.2",
+    "@unocss/vite": "^66.5.10",
+    "@vitejs/plugin-vue": "^6.0.3",
+    "@vue/eslint-config-prettier": "^10.2.0",
+    "@vue/eslint-config-typescript": "^14.6.0",
+    "@vue/tsconfig": "^0.8.1",
+    "commitizen": "^4.3.1",
+    "cz-conventional-changelog": "^3.3.0",
+    "eslint": "^9.39.2",
+    "eslint-plugin-vue": "^10.6.2",
+    "husky": "^9.1.7",
+    "standard-version": "^9.5.0",
+    "typescript": "^5.9.3",
+    "unocss": "^66.5.10",
+    "unplugin-auto-import": "^20.3.0",
+    "unplugin-vue-components": "^30.0.0",
+    "vite": "^7.2.7",
+    "vite-plugin-pwa": "^1.2.0",
+    "vue-tsc": "^3.1.8",
+    "workbox-window": "^7.4.0"
+  },
+  "config": {
+    "commitizen": {
+      "path": "cz-conventional-changelog"
+    }
+  }
+}
