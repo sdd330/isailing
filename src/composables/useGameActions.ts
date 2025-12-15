@@ -174,12 +174,11 @@ export function useGameActions() {
       type: 'system',
       content: '🏢 选择你想去的地方或者服务：',
       icon: '🏢',
-      options: buildings
-        .filter(building => !building.disabled)
-        .map(building => ({
-          label: `${building.icon} ${building.name} - ${building.description}`,
-          action: building.action
-        }))
+      options: buildings.map(building => ({
+        label: `${building.icon} ${building.name} - ${building.description}`,
+        action: building.action,
+        disabled: building.disabled
+      }))
     }, true)
   }
 
