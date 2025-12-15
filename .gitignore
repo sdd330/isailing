@@ -10,6 +10,11 @@ components.d.ts
 target/
 build/
 dist/
+dev-dist/
+src-tauri/target/
+src-tauri/gen/
+src-tauri/icons/
+src-tauri/icon.png
 
 # Temp
 temp/
