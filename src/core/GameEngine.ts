@@ -6,6 +6,7 @@ import { FinancialManager } from './managers/FinancialManager'
 import { BuildingManager } from './managers/BuildingManager'
 import { MarketManager } from './managers/MarketManager'
 import { PredictionMarketManager } from './managers/PredictionMarketManager'
+import { generateAvailableEvents } from '@/config/predictionMarket.config'
 import { CityManager } from './managers/CityManager'
 import { City } from './models/City'
 import { CommercialEventHandler } from './handlers/CommercialEventHandler'
@@ -323,8 +324,6 @@ export class GameEngine {
    * 生成新的预测市场事件
    */
   private generatePredictionEvents(currentWeek: number): Array<Omit<PredictionMarketEvent, 'status' | 'createdAt'>> {
-    const { generateAvailableEvents } = require('@/config/predictionMarket.config')
-
     return generateAvailableEvents(currentWeek, {
       cash: this.state.cash,
       debt: this.state.debt,
